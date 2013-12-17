@@ -1,6 +1,6 @@
 /******************************************************************************
  * Icinga 2                                                                   *
- * Copyright (C) 2012-2014 Icinga Development Team (http://www.icinga.org)    *
+ * Copyright (C) 2012-2013 Icinga Development Team (http://www.icinga.org/)   *
  *                                                                            *
  * This program is free software; you can redistribute it and/or              *
  * modify it under the terms of the GNU General Public License                *
@@ -17,63 +17,40 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.             *
  ******************************************************************************/
 
-#include "base/objectlock.hpp"
-#include "base/debug.hpp"
+#include "base/thinmutex.hpp"
+#include <boost/thread.hpp>
 
 using namespace icinga;
 
-ObjectLock::ObjectLock(void)
-	: m_Object(NULL), m_Locked(false)
-{ }
-
-ObjectLock::~ObjectLock(void)
+void ThinMutex::MakeNative(void)
 {
-	Unlock();
+	boost::mutex *mtx = new boost::mutex();
+	mtx->lock();
+#ifdef _WIN32
+#	ifdef _WIN64
+	InterlockedCompareExchange64(&m_Data, reinterpret_cast<LONGLONG>(mtx), THINLOCK_LOCKED);
+#	else /* _WIN64 */
+	InterlockedCompareExchange(&m_Data, reinterpret_cast<LONG>(mtx), THINLOCK_LOCKED);
+#	endif /* _WIN64 */
+#else /* _WIN32 */
+	__sync_bool_compare_and_swap(&m_Data, THINLOCK_LOCKED, reinterpret_cast<uintptr_t>(mtx));
+#endif /* _WIN32 */
 }
 
-ObjectLock::ObjectLock(const Object::Ptr& object)
-	: m_Object(object.get()), m_Locked(false)
+void ThinMutex::DestroyNative(void)
 {
-	if (m_Object)
-		Lock();
+	delete reinterpret_cast<boost::mutex *>(m_Data);
 }
 
-ObjectLock::ObjectLock(const Object *object)
-	: m_Object(object), m_Locked(false)
+void ThinMutex::LockNative(void)
 {
-	if (m_Object)
-		Lock();
+	boost::mutex *mtx = reinterpret_cast<boost::mutex *>(m_Data);
+	mtx->lock();
 }
 
-void ObjectLock::Lock(void)
+void ThinMutex::UnlockNative(void)
 {
-	ASSERT(!m_Locked && m_Object != NULL);
-	ASSERT(!m_Object->OwnsLock());
-
-	m_Object->m_Mutex.Lock();
-	m_Locked = true;
-
-#ifdef _DEBUG
-	{
-		boost::mutex::scoped_lock lock(Object::m_DebugMutex);
-		m_Object->m_Locked = true;
-		m_Object->m_LockOwner = boost::this_thread::get_id();
-	}
-#endif /* _DEBUG */
+	boost::mutex *mtx = reinterpret_cast<boost::mutex *>(m_Data);
+	mtx->unlock();
 }
 
-void ObjectLock::Unlock(void)
-{
-#ifdef _DEBUG
-	{
-		boost::mutex::scoped_lock lock(Object::m_DebugMutex);
-		if (m_Locked)
-			m_Object->m_Locked = false;
-	}
-#endif /* _DEBUG */
-
-	if (m_Locked) {
-		m_Object->m_Mutex.Unlock();
-		m_Locked = false;
-	}
-}

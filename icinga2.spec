@@ -243,6 +243,11 @@ CMAKE_OPTS="$CMAKE_OPTS -DBOOST_LIBRARYDIR=/usr/lib/boost141 \
 %endif
 %endif
 
+%if "%{_vendor}" == "suse"
+CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_C_FLAGS='-march=i686' \
+ -DCMAKE_CXX_FLAGS='-march=i686'"
+%endif
+
 cmake $CMAKE_OPTS .
 
 make %{?_smp_mflags}
