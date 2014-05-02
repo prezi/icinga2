@@ -50,6 +50,7 @@ enum DbObjectType
 	DbObjectTypeContactGroup = 11,
 	DbObjectTypeCommand = 12,
 	DbObjectTypeEndpoint = 13,
+	DbObjectTypeNotification = 14,
 };
 
 /**

@@ -23,7 +23,7 @@ add_library(db_ido SHARED
   commanddbobject.cpp dbconnection.cpp dbconnection.th dbconnection.th
   db_ido-type.cpp dbevents.cpp dbobject.cpp dbquery.cpp dbreference.cpp dbtype.cpp
   dbvalue.cpp endpointdbobject.cpp hostdbobject.cpp hostgroupdbobject.cpp
-  servicedbobject.cpp servicegroupdbobject.cpp timeperioddbobject.cpp
+  notificationdbobject.cpp servicedbobject.cpp servicegroupdbobject.cpp timeperioddbobject.cpp
   userdbobject.cpp usergroupdbobject.cpp
 )
 

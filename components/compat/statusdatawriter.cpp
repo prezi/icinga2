@@ -749,6 +749,46 @@ void StatusDataWriter::UpdateObjectsCache(void)
 		}
 	}
 
+	BOOST_FOREACH(const Notification::Ptr& notification, DynamicType::GetObjects<Notification>()) {
+
+		Checkable::Ptr checkable = notification->GetCheckable();
+
+		Host::Ptr host;
+		Service::Ptr service;
+		tie(host, service) = GetHostService(checkable);
+
+                int state_filter = notification->GetStateFilter();
+		std::vector<String> notification_options;
+		if (state_filter & StateFilterOK || state_filter & StateFilterUp)
+			notification_options.push_back("o");
+		if (state_filter & StateFilterWarning)
+			notification_options.push_back("w");
+		if (state_filter & StateFilterCritical)
+			notification_options.push_back("c");
+		if (state_filter & StateFilterUnknown)
+			notification_options.push_back("u");
+		if (state_filter & StateFilterDown)
+			notification_options.push_back("d");
+
+		String options = boost::algorithm::join(notification_options, ",");
+
+		if (!service) {
+			objectfp << "define hostnotification {" "\n"
+				    "\t" "host_name" "\t" << host->GetName() << "\n"
+				    "\t" "notification_options" "\t" << options << "\n"
+				    "\t" "}" "\n"
+				    "\n";
+		} else {
+
+			objectfp << "define servicenotification {" "\n"
+				    "\t" "host_name" "\t" << host->GetName() << "\n"
+				    "\t" "service_description" "\t" << service->GetShortName() << "\n"
+				    "\t" "notification_options" "\t" << options << "\n"
+				    "\t" "}" "\n"
+				    "\n";
+		}
+	}
+
 	objectfp.close();
 
 #ifdef _WIN32

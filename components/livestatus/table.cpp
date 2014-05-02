@@ -32,6 +32,7 @@
 #include "livestatus/timeperiodstable.h"
 #include "livestatus/logtable.h"
 #include "livestatus/statehisttable.h"
+#include "livestatus/notificationstable.h"
 #include "livestatus/filter.h"
 #include "base/array.h"
 #include "base/dictionary.h"
@@ -74,6 +75,8 @@ Table::Ptr Table::GetByName(const String& name, const String& compat_log_path, c
 		return make_shared<StateHistTable>(compat_log_path, from, until);
 	else if (name == "endpoints")
 		return make_shared<EndpointsTable>();
+	else if (name == "notifications")
+		return make_shared<NotificationsTable>();
 
 	return Table::Ptr();
 }

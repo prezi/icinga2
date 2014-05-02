@@ -1380,6 +1380,121 @@ CREATE TABLE IF NOT EXISTS icinga_endpointstatus (
 ) ENGINE=InnoDB COMMENT='Endpoint status';
 
 
+
+
+
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table icinga_hostnotifications
+--
+
+CREATE TABLE IF NOT EXISTS icinga_hostnotifications (
+  hostnotification_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  instance_id bigint unsigned default 0,
+  config_type smallint default 0,
+  host_object_id bigint unsigned default 0,
+  timeperiod_object_id bigint unsigned default 0,
+  begin_time smallint default 0,
+  end_time smallint default 0,
+  notification_interval double  default '0',
+  notify_on_recovery smallint default 0,
+  notify_on_down smallint default 0,
+  notify_on_unreachable smallint default 0,
+  PRIMARY KEY  (hostnotification_id),
+  UNIQUE KEY instance_id (instance_id,config_type,host_object_id,timeperiod_object_id,begin_time,end_time)
+) ENGINE=InnoDB  COMMENT='Host notification definitions';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table icinga_hostnotification_contactgroups
+--
+
+CREATE TABLE IF NOT EXISTS icinga_hostnotification_contactgroups (
+  hostnotification_contactgroup_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  instance_id bigint unsigned default 0,
+  hostnotification_id bigint unsigned default 0,
+  contactgroup_object_id bigint unsigned default 0,
+  PRIMARY KEY  (hostnotification_contactgroup_id),
+  UNIQUE KEY instance_id (hostnotification_id,contactgroup_object_id)
+) ENGINE=InnoDB  COMMENT='Host notification contact groups';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table icinga_hostnotification_contacts
+--
+
+CREATE TABLE IF NOT EXISTS icinga_hostnotification_contacts (
+  hostnotification_contact_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  instance_id bigint unsigned default 0,
+  hostnotification_id bigint unsigned default 0,
+  contact_object_id bigint unsigned default 0,
+  PRIMARY KEY  (hostnotification_contact_id),
+  UNIQUE KEY instance_id (instance_id,hostnotification_id,contact_object_id)
+) ENGINE=InnoDB  COMMENT='Host notification contacts';
+
+-- --------------------------------------------------------
+
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table icinga_servicenotifications
+--
+
+CREATE TABLE IF NOT EXISTS icinga_servicenotifications (
+  servicenotification_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  instance_id bigint unsigned default 0,
+  config_type smallint default 0,
+  service_object_id bigint unsigned default 0,
+  timeperiod_object_id bigint unsigned default 0,
+  begin_time smallint default 0,
+  end_time smallint default 0,
+  notification_interval double  default '0',
+  notify_on_recovery smallint default 0,
+  notify_on_warning smallint default 0,
+  notify_on_unknown smallint default 0,
+  notify_on_critical smallint default 0,
+  PRIMARY KEY  (servicenotification_id),
+  UNIQUE KEY instance_id (instance_id,config_type,service_object_id,timeperiod_object_id,first_notification,last_notification)
+) ENGINE=InnoDB  COMMENT='Service notification definitions';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table icinga_servicenotification_contactgroups
+--
+
+CREATE TABLE IF NOT EXISTS icinga_servicenotification_contactgroups (
+  servicenotification_contactgroup_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  instance_id bigint unsigned default 0,
+  servicenotification_id bigint unsigned default 0,
+  contactgroup_object_id bigint unsigned default 0,
+  PRIMARY KEY  (servicenotification_contactgroup_id),
+  UNIQUE KEY instance_id (servicenotification_id,contactgroup_object_id)
+) ENGINE=InnoDB  COMMENT='Service notification contact groups';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table icinga_servicenotification_contacts
+--
+
+CREATE TABLE IF NOT EXISTS icinga_servicenotification_contacts (
+  servicenotification_contact_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  instance_id bigint unsigned default 0,
+  servicenotification_id bigint unsigned default 0,
+  contact_object_id bigint unsigned default 0,
+  PRIMARY KEY  (servicenotification_contact_id),
+  UNIQUE KEY instance_id (instance_id,servicenotification_id,contact_object_id)
+) ENGINE=InnoDB  COMMENT='Service notification contacts';
+
+-- --------------------------------------------------------
+
+
 ALTER TABLE icinga_servicestatus ADD COLUMN endpoint_object_id bigint default NULL;
 ALTER TABLE icinga_hoststatus ADD COLUMN endpoint_object_id bigint default NULL;
 ALTER TABLE icinga_contactstatus ADD COLUMN endpoint_object_id bigint default NULL;
