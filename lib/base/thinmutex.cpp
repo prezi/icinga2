@@ -18,9 +18,36 @@
  ******************************************************************************/
 
 #include "base/thinmutex.hpp"
+#include "base/initialize.hpp"
+#include "base/timer.hpp"
+#include "base/convert.hpp"
+#include "base/logger_fwd.hpp"
 #include <boost/thread.hpp>
 
 using namespace icinga;
+
+uintptr_t ThinMutex::m_TotalMutexes;
+uintptr_t ThinMutex::m_InflatedMutexes;
+uintptr_t ThinMutex::m_DeadMutexes;
+
+static Timer::Ptr l_Timer;
+
+static void ThinMutexTimerHandler(void)
+{
+	Log(LogInformation, "base", "Mutexes: " + Convert::ToString(ThinMutex::m_TotalMutexes) +
+	    ", Inflated Mutexes: " + Convert::ToString(ThinMutex::m_InflatedMutexes) +
+	    ", Dead Mutexes: " + Convert::ToString(ThinMutex::m_DeadMutexes));
+}
+
+static void InitThinMutex(void)
+{
+	l_Timer = make_shared<Timer>();
+	l_Timer->SetInterval(10);
+	l_Timer->OnTimerExpired.connect(boost::bind(&ThinMutexTimerHandler));
+	l_Timer->Start();
+}
+
+INITIALIZE_ONCE(&InitThinMutex);
 
 void ThinMutex::MakeNative(void)
 {
@@ -35,6 +62,8 @@ void ThinMutex::MakeNative(void)
 #else /* _WIN32 */
 	__sync_bool_compare_and_swap(&m_Data, THINLOCK_LOCKED, reinterpret_cast<uintptr_t>(mtx));
 #endif /* _WIN32 */
+
+	__sync_fetch_and_add(&m_InflatedMutexes, 1);
 }
 
 void ThinMutex::DestroyNative(void)

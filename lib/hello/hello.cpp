@@ -20,7 +20,7 @@
 #include "hello/hello.hpp"
 #include "base/dynamictype.hpp"
 #include "base/logger_fwd.hpp"
-#include "base/convert.h"
+#include "base/convert.hpp"
 
 using namespace icinga;
 

@@ -43,12 +43,16 @@ class I2_BASE_API ThinMutex
 public:
 	inline ThinMutex(void)
 		: m_Data(THINLOCK_UNLOCKED)
-	{ }
+	{
+		__sync_fetch_and_add(&m_TotalMutexes, 1);
+	}
 
 	inline ~ThinMutex(void)
 	{
 		if (m_Data > THINLOCK_LOCKED)
 			DestroyNative();
+
+		__sync_fetch_and_add(&m_DeadMutexes, 1);
 	}
 
 	inline void Spin(unsigned int it)
@@ -129,6 +133,11 @@ private:
 #else /* _WIN32 */
 	uintptr_t m_Data;
 #endif /* _WIN32 */
+
+public:
+	static uintptr_t m_TotalMutexes;
+	static uintptr_t m_InflatedMutexes;
+	static uintptr_t m_DeadMutexes;
 };
 
 }
