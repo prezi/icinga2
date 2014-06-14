@@ -24,6 +24,7 @@
 #include "base/initialize.hpp"
 #include "base/dynamictype.hpp"
 #include "base/logger_fwd.hpp"
+#include "base/exception.hpp"
 #include "base/context.hpp"
 #include <boost/foreach.hpp>
 
@@ -93,8 +94,20 @@ bool ScheduledDowntime::EvaluateApplyRule(const Checkable::Ptr& checkable, const
 
 	ConfigItem::Ptr downtimeItem = builder->Compile();
 	downtimeItem->Register();
-	DynamicObject::Ptr dobj = downtimeItem->Commit();
-	dobj->OnConfigLoaded();
+
+	try {
+		DynamicObject::Ptr dobj = downtimeItem->Commit();
+
+		if (!dobj) {
+			Log(LogCritical, "ScheduledDowntime", "Error in apply rule '" + rule.GetName() + "'. Cannot commit object.");
+			return false;
+		}
+
+		dobj->OnConfigLoaded();
+	} catch (std::exception& e) {
+		Log(LogCritical, "ScheduledDowntime", "Error in apply rule '" + rule.GetName() + "'. Cannot commit object.");
+		RethrowUncaughtException();
+	}
 
 	return true;
 }

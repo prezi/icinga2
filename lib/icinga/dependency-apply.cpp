@@ -24,6 +24,7 @@
 #include "base/initialize.hpp"
 #include "base/dynamictype.hpp"
 #include "base/logger_fwd.hpp"
+#include "base/exception.hpp"
 #include "base/context.hpp"
 #include "base/workqueue.hpp"
 #include <boost/foreach.hpp>
@@ -99,8 +100,20 @@ bool Dependency::EvaluateApplyRuleOne(const Checkable::Ptr& checkable, const App
 
 	ConfigItem::Ptr dependencyItem = builder->Compile();
 	dependencyItem->Register();
-	DynamicObject::Ptr dobj = dependencyItem->Commit();
-	dobj->OnConfigLoaded();
+
+	try {
+		DynamicObject::Ptr dobj = dependencyItem->Commit();
+
+		if (!dobj) {
+			Log(LogCritical, "Dependency", "Error in apply rule '" + rule.GetName() + "'. Cannot commit object.");
+			return false;
+		}
+
+		dobj->OnConfigLoaded();
+	} catch (std::exception& e) {
+		Log(LogCritical, "Dependency", "Error in apply rule '" + rule.GetName() + "'. Cannot commit object.");
+		RethrowUncaughtException();
+	}
 
 	return true;
 }

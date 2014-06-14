@@ -111,7 +111,13 @@ static bool LoadConfigFiles(const String& appType)
 	builder->SetType(appType);
 	builder->SetName("application");
 	ConfigItem::Ptr item = builder->Compile();
-	item->Register();
+
+	try {
+		item->Register();
+	} catch (std::exception& e) {
+		Log(LogCritical, "icinga-app", "Cannot register application. Aborting.");
+		return false;
+	}
 
 	bool result = ConfigItem::ValidateItems();
 

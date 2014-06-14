@@ -564,7 +564,13 @@ Value AExpression::OpObject(const AExpression* expr, const Dictionary::Ptr& loca
 	item->SetAbstract(abstract);
 	item->SetScope(locals);
 	item->SetZone(zone);
-	item->Compile()->Register();
+
+	try {
+		item->Compile()->Register();
+	} catch (std::exception& e) {
+		Log(LogCritical, "AExpression", "Cannot register expression rule '" + name + "'");
+		RethrowUncaughtException();
+	}
 
 	ObjectRule::AddRule(type, name, exprl, filter, expr->m_DebugInfo, locals);
 

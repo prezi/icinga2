@@ -101,7 +101,12 @@ void DynamicObject::Register(void)
 	ASSERT(!OwnsLock());
 
 	DynamicType::Ptr dtype = GetType();
-	dtype->RegisterObject(GetSelf());
+	try {
+		dtype->RegisterObject(GetSelf());
+	} catch (boost::exception& e) {
+		Log(LogCritical, "DynamicObject", "Cannot register duplicate " + dtype->GetName() + " object '" + GetName() + "'. Object already exists.");
+		RethrowUncaughtException();
+	}
 }
 
 void DynamicObject::Start(void)

@@ -26,9 +26,9 @@
 #include "base/dynamictype.hpp"
 #include "base/objectlock.hpp"
 #include "base/convert.hpp"
+#include "base/utility.hpp"
 #include "base/logger_fwd.hpp"
 #include "base/debug.hpp"
-#include "base/workqueue.hpp"
 #include "base/exception.hpp"
 #include <sstream>
 #include <boost/foreach.hpp>
@@ -170,8 +170,11 @@ DynamicObject::Ptr ConfigItem::Commit(void)
 	if (!dtype)
 		BOOST_THROW_EXCEPTION(std::runtime_error("Type '" + GetType() + "' does not exist."));
 
-	if (dtype->GetObject(GetName()))
-	    BOOST_THROW_EXCEPTION(std::runtime_error("An object with type '" + GetType() + "' and name '" + GetName() + "' already exists."));
+	if (dtype->GetObject(GetName())) {
+		ConfigCompilerContext::GetInstance()->AddMessage(false, "An object with type '" + GetType() + "' and name '" + GetName() + "' already exists.");
+	    	BOOST_THROW_EXCEPTION(std::runtime_error("An object with type '" + GetType() + "' and name '" + GetName() + "' already exists."));
+	}
+
 
 	if (IsAbstract())
 		return DynamicObject::Ptr();
@@ -185,7 +188,15 @@ DynamicObject::Ptr ConfigItem::Commit(void)
 	}
 
 	DynamicObject::Ptr dobj = dtype->CreateObject(properties);
-	dobj->Register();
+	try {
+		dobj->Register();
+	} catch (std::exception& e) {
+		CONTEXT("ConfigItem Commit: Register Object");
+		Log(LogDebug, "ConfigItem", "Cannot register object '" + dobj->GetName() + "'.");
+		ConfigCompilerContext::GetInstance()->AddMessage(false, "Cannot register object '" + dobj->GetName() + "'.");
+		return DynamicObject::Ptr();
+		//RethrowUncaughtException();
+	}
 
 	m_Object = dobj;
 
@@ -271,6 +282,10 @@ bool ConfigItem::ValidateItems(void)
 
 	ParallelWorkQueue upq;
 
+	/* register exception handler for returning errors safely */
+	boost::exception_ptr error;
+	upq.SetExceptionCallback(boost::bind(ConfigItem::ExceptionHandler, error));
+
 	Log(LogInformation, "ConfigItem", "Validating config items (step 1)...");
 
 	BOOST_FOREACH(const ItemMap::value_type& kv, m_Items) {
@@ -287,8 +302,10 @@ bool ConfigItem::ValidateItems(void)
 	BOOST_FOREACH(const ItemMap::value_type& kv, m_Items) {
 		upq.Enqueue(boost::bind(&ConfigItem::Commit, kv.second));
 	}
-
 	upq.Join();
+
+	if (ConfigCompilerContext::GetInstance()->HasErrors())
+		return false;
 
 	std::vector<DynamicObject::Ptr> objects;
 	BOOST_FOREACH(const ItemMap::value_type& kv, m_Items) {
@@ -306,6 +323,9 @@ bool ConfigItem::ValidateItems(void)
 
 	upq.Join();
 
+	if (ConfigCompilerContext::GetInstance()->HasErrors())
+		return false;
+
 	Log(LogInformation, "ConfigItem", "Evaluating 'object' rules (step 1)...");
 	ObjectRule::EvaluateRules(false);
 
@@ -322,6 +342,9 @@ bool ConfigItem::ValidateItems(void)
 	}
 
 	upq.Join();
+
+	if (ConfigCompilerContext::GetInstance()->HasErrors())
+		return false;
 
 	ConfigItem::DiscardItems();
 	ConfigType::DiscardTypes();
@@ -352,6 +375,10 @@ bool ConfigItem::ActivateItems(void)
 
 	ParallelWorkQueue upq;
 
+	/* register exception handler for returning errors safely */
+	boost::exception_ptr error;
+	upq.SetExceptionCallback(boost::bind(ConfigItem::ExceptionHandler, error));
+
 	BOOST_FOREACH(const DynamicType::Ptr& type, DynamicType::GetTypes()) {
 		BOOST_FOREACH(const DynamicObject::Ptr& object, type->GetObjects()) {
 			if (object->IsActive())
@@ -365,6 +392,9 @@ bool ConfigItem::ActivateItems(void)
 	}
 
 	upq.Join();
+
+	if (ConfigCompilerContext::GetInstance()->HasErrors())
+		return false;
 
 #ifdef _DEBUG
 	BOOST_FOREACH(const DynamicType::Ptr& type, DynamicType::GetTypes()) {
@@ -384,4 +414,10 @@ void ConfigItem::DiscardItems(void)
 	boost::mutex::scoped_lock lock(m_Mutex);
 
 	m_Items.clear();
+}
+
+void ConfigItem::ExceptionHandler(boost::exception_ptr exp) {
+        Log(LogCritical, "ConfigItem", "Exception during config compilation. Aborting.");
+
+	ConfigCompilerContext::GetInstance()->AddMessage(true, "Configuration compilation failed.");
 }

@@ -178,12 +178,20 @@ void WorkQueue::WorkerThreadProc(void)
 ParallelWorkQueue::ParallelWorkQueue(void)
 	: m_QueueCount(boost::thread::hardware_concurrency()),
 	  m_Queues(new WorkQueue[m_QueueCount]),
-	  m_Index(0)
-{ }
+	  m_Index(0), m_ExceptionCallback(DefaultExceptionCallback)
+{
+	for (unsigned int i = 0; i < m_QueueCount; i++)
+		m_Queues[i].SetExceptionCallback(m_ExceptionCallback);
+}
 
 ParallelWorkQueue::~ParallelWorkQueue(void)
 {
 	delete[] m_Queues;
+}
+
+void ParallelWorkQueue::DefaultExceptionCallback(boost::exception_ptr)
+{
+	throw;
 }
 
 void ParallelWorkQueue::Enqueue(const boost::function<void(void)>& callback)
@@ -197,3 +205,11 @@ void ParallelWorkQueue::Join(void)
 	for (unsigned int i = 0; i < m_QueueCount; i++)
 		m_Queues[i].Join();
 }
+
+void ParallelWorkQueue::SetExceptionCallback(const ExceptionCallback& callback)
+{
+	boost::mutex::scoped_lock lock(m_Mutex);
+
+	m_ExceptionCallback = callback;
+}
+

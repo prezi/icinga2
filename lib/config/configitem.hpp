@@ -23,6 +23,7 @@
 #include "config/i2-config.hpp"
 #include "config/aexpression.hpp"
 #include "base/dynamicobject.hpp"
+#include "base/workqueue.hpp"
 
 namespace icinga
 {
@@ -91,6 +92,8 @@ private:
 
 	static ConfigItem::Ptr GetObjectUnlocked(const String& type,
 	    const String& name);
+
+	static void ExceptionHandler(boost::exception_ptr exp);
 };
 
 }

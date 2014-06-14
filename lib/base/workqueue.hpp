@@ -87,16 +87,23 @@ private:
 class I2_BASE_API ParallelWorkQueue
 {
 public:
+	typedef boost::function<void (boost::exception_ptr)> ExceptionCallback;
+
 	ParallelWorkQueue(void);
 	~ParallelWorkQueue(void);
 
 	void Enqueue(const boost::function<void(void)>& callback);
 	void Join(void);
 
+	void SetExceptionCallback(const ExceptionCallback& callback);
 private:
 	unsigned int m_QueueCount;
 	WorkQueue *m_Queues;
 	unsigned int m_Index;
+	boost::mutex m_Mutex;
+	ExceptionCallback m_ExceptionCallback;
+
+	static void DefaultExceptionCallback(boost::exception_ptr exp);
 };
 
 }

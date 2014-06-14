@@ -23,6 +23,7 @@
 #include "base/initialize.hpp"
 #include "base/dynamictype.hpp"
 #include "base/logger_fwd.hpp"
+#include "base/exception.hpp"
 #include "base/context.hpp"
 #include "base/workqueue.hpp"
 #include <boost/foreach.hpp>
@@ -84,8 +85,19 @@ bool Service::EvaluateApplyRuleOne(const Host::Ptr& host, const ApplyRule& rule)
 
 	ConfigItem::Ptr serviceItem = builder->Compile();
 	serviceItem->Register();
-	DynamicObject::Ptr dobj = serviceItem->Commit();
-	dobj->OnConfigLoaded();
+	try {
+		DynamicObject::Ptr dobj = serviceItem->Commit();
+
+		if (!dobj) {
+			Log(LogCritical, "Service", "Error in apply rule '" + rule.GetName() + "'. Cannot commit object.");
+			return false;
+		}
+
+		dobj->OnConfigLoaded();
+	} catch (std::exception& e) {
+		Log(LogCritical, "Service", "Error in apply rule '" + rule.GetName() + "'. Cannot commit object.");
+		RethrowUncaughtException();
+	}
 
 	return true;
 }

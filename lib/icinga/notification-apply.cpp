@@ -24,6 +24,7 @@
 #include "base/initialize.hpp"
 #include "base/dynamictype.hpp"
 #include "base/logger_fwd.hpp"
+#include "base/exception.hpp"
 #include "base/context.hpp"
 #include "base/workqueue.hpp"
 #include <boost/foreach.hpp>
@@ -94,8 +95,20 @@ bool Notification::EvaluateApplyRuleOne(const Checkable::Ptr& checkable, const A
 
 	ConfigItem::Ptr notificationItem = builder->Compile();
 	notificationItem->Register();
-	DynamicObject::Ptr dobj = notificationItem->Commit();
-	dobj->OnConfigLoaded();
+
+	try {
+		DynamicObject::Ptr dobj = notificationItem->Commit();
+
+		if (!dobj) {
+			Log(LogCritical, "Notification", "Error in apply rule '" + rule.GetName() + "'. Cannot commit object.");
+			return false;
+		}
+
+		dobj->OnConfigLoaded();
+	} catch (std::exception& e) {
+		Log(LogCritical, "Notification", "Error in apply rule '" + rule.GetName() + "'. Cannot commit object.");
+		RethrowUncaughtException();
+	}
 
 	return true;
 }
