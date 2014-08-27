@@ -59,7 +59,7 @@
 %define icingaweb2name icingaweb2
 %define icingaweb2version 2.0.0
 
-%define icingaclassicconfdir %{_sysconfdir}/icinga
+%define icingaclassicconfdir %{_sysconfdir}/icinga2/classicui
 
 %define logmsg logger -t %{name}/rpm
 
@@ -238,9 +238,10 @@ make install \
 	DESTDIR="%{buildroot}"
 
 # install classicui config
-install -D -m 0644 etc/icinga/icinga-classic.htpasswd %{buildroot}%{icingaclassicconfdir}/passwd
-install -D -m 0644 etc/icinga/cgi.cfg %{buildroot}%{icingaclassicconfdir}/cgi.cfg
-install -D -m 0644 etc/icinga/icinga-classic-apache.conf %{buildroot}%{apacheconfdir}/icinga.conf
+mkdir -p "%{buildroot}%{icingaclassicconfdir}/"
+install -D -m 0644 rpm/classicui/htpasswd.users %{buildroot}%{icingaclassicconfdir}/htpasswd.users
+install -D -m 0644 rpm/classicui/cgi.cfg %{buildroot}%{icingaclassicconfdir}/cgi.cfg
+install -D -m 0644 rpm/classicui/apache.conf.RHEL.SUSE %{buildroot}%{apacheconfdir}/icinga2-classicui.conf
 
 # remove features-enabled symlinks
 rm -f %{buildroot}/%{_sysconfdir}/%{name}/features-enabled/*.conf
@@ -529,8 +530,8 @@ exit 0
 %defattr(-,root,root,-)
 %attr(0751,%{icinga_user},%{icinga_group}) %dir %{icingaclassicconfdir}
 %config(noreplace) %{icingaclassicconfdir}/cgi.cfg
-%config(noreplace) %{apacheconfdir}/icinga.conf
-%config(noreplace) %attr(0640,root,%{apachegroup}) %{icingaclassicconfdir}/passwd
+%config(noreplace) %{apacheconfdir}/icinga2-classicui.conf
+%config(noreplace) %attr(0640,root,%{apachegroup}) %{icingaclassicconfdir}/htpasswd.users
 
 %files -n python-icinga2
 %{python2_sitelib}/icinga2*

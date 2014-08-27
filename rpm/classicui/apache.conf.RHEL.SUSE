@@ -1,0 +1,64 @@
+# apache configuration for icinga
+
+# RHEL/SUSE on packages.icinga.org
+ScriptAlias /icinga2-classicui/cgi-bin "/usr/lib64/icinga/cgi"
+
+# Where the HTML pages live
+Alias /icinga2-classicui /usr/share/icinga
+
+<LocationMatch "^/icinga2-classicui/cgi-bin">
+	SetEnv ICINGA_CGI_CONFIG /etc/icinga2/classicui/cgi.cfg
+</LocationMatch>
+
+<Directory "/usr/lib64/icinga/cgi">
+	Options ExecCGI
+	AllowOverride None
+
+	AuthName "Icinga Access"
+	AuthType Basic
+	AuthUserFile /etc/icinga2/classicui/htpasswd.users
+	<IfModule mod_authz_core.c>
+	# Apache 2.4
+	<RequireAll>
+		Require all granted
+		# Require local
+		Require valid-user
+	</RequireAll>
+ 	</IfModule>
+ 	<IfModule !mod_authz_core.c>
+	# Apache 2.2
+		Order allow,deny
+		Allow from all
+ 		#  Order deny,allow
+ 		#  Deny from all
+ 		#  Allow from 127.0.0.1
+ 	Require valid-user
+	</IfModule>
+</Directory>
+
+<Directory "/usr/share/icinga">
+        Options None
+        AllowOverride All
+
+        AuthName "Icinga Access"
+        AuthType Basic
+        AuthUserFile /etc/icinga2/classicui/htpasswd.users
+        <IfModule mod_authz_core.c>
+        # Apache 2.4
+        <RequireAll>
+                Require all granted
+                # Require local
+                Require valid-user
+        </RequireAll>
+        </IfModule>
+        <IfModule !mod_authz_core.c>
+	# Apache 2.2
+                Order allow,deny
+                Allow from all
+                #  Order deny,allow
+                #  Deny from all
+                #  Allow from 127.0.0.1
+                Require valid-user
+        </IfModule>
+</Directory>
+
