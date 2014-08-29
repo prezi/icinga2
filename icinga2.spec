@@ -533,6 +533,7 @@ exit 0
 %config(noreplace) %attr(0640,root,%{apachegroup}) %{icingaclassicconfdir}/passwd
 
 %files -n python-icinga2
+%defattr(-,root,root,-)
 %{python2_sitelib}/icinga2*
 
 
