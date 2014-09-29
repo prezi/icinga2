@@ -559,6 +559,13 @@ int Main(void)
 			// no additional fork neccessary on reload
 			try {
 				Daemonize();
+				String errorLog;
+				if (g_AppParams.count("errorlog"))
+					errorLog = g_AppParams["errorlog"].as<std::string>();
+
+				SetDaemonIO(errorLog);
+				Logger::DisableConsoleLog();
+
 			} catch (std::exception&) {
 				Log(LogCritical, "icinga-app", "Daemonize failed. Exiting.");
 				return EXIT_FAILURE;
@@ -572,15 +579,6 @@ int Main(void)
 		return EXIT_FAILURE;
 	}
 
-	if (g_AppParams.count("daemonize")) {
-		String errorLog;
-		if (g_AppParams.count("errorlog"))
-			errorLog = g_AppParams["errorlog"].as<std::string>();
-
-		SetDaemonIO(errorLog);
-		Logger::DisableConsoleLog();
-	}
-	
 #ifndef _WIN32
 	struct sigaction sa;
 	memset(&sa, 0, sizeof(sa));
