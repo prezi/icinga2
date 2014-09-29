@@ -69,7 +69,7 @@ void CheckResultReader::ReadTimerHandler(void) const
 {
 	CONTEXT("Processing check result files in '" + GetSpoolDir() + "'");
 
-	Utility::Glob(GetSpoolDir() + "/c??????.ok", boost::bind(&CheckResultReader::ProcessCheckResultFile, this, _1));
+	Utility::Glob(GetSpoolDir() + "/*.ok", boost::bind(&CheckResultReader::ProcessCheckResultFile, this, _1));
 }
 
 void CheckResultReader::ProcessCheckResultFile(const String& path) const
